@@ -4,9 +4,8 @@ import { useGameStore } from '../store/gameStore';
 import { QRCodeSVG } from 'qrcode.react';
 import GameAudio from '../components/GameAudio';
 import KaraokeScoring from '../components/KaraokeScoring';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
-import Soundboard from '../components/Soundboard';
 
 export default function HostPage() {
   const { socket, connected, joinGame } = useSocket();
@@ -17,7 +16,6 @@ export default function HostPage() {
   const [hasJoined, setHasJoined] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [showConfetti, setShowConfetti] = useState(false);
   const scoreRefs = useRef<{[key: string]: HTMLSpanElement | null}>({});
   const previousScores = useRef<{[key: string]: number}>({});
 
@@ -26,6 +24,7 @@ export default function HostPage() {
       handleJoin();
     }
   }, [connected]);
+
 
   useEffect(() => {
     if (!socket) return;
@@ -244,16 +243,6 @@ export default function HostPage() {
 
   const currentState = gameState?.state || 'LOBBY';
 
-  // Get the current URL for the QR Code
-  const joinUrl = getJoinUrl();
-  const [currentUrl, setCurrentUrl] = useState('');
-
-  // Get the current URL on the client side
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      setCurrentUrl(window.location.origin);
-    }
-  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 p-4 md:p-8 pb-24">
@@ -483,3 +472,27 @@ export default function HostPage() {
               {/* Album Cover Placeholder */}
               <div className="mx-auto w-64 h-64 bg-gradient-to-br from-purple-600 to-pink-600 rounded-2xl shadow-2xl flex items-center justify-center mb-6">
                 <div className="text-6xl">🎵</div>
+              </div>
+              
+              <h3 className="text-2xl font-semibold text-white mb-4">Música: {gameState.currentRound.song?.name || 'Desconhecida'}</h3>
+              <p className="text-gray-300 mb-6">Artista: {gameState.currentRound.song?.artist || 'Desconhecido'}</p>
+              
+              <div className="mt-8">
+                <button
+                  onClick={handleNextRound}
+                  disabled={isLoading}
+                  className="px-8 py-4 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold text-lg rounded-lg transition-all duration-200 shadow-lg shadow-purple-500/50"
+                >
+                  Próxima Música
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {/* Confetti effect is handled by canvas-confetti */}
+      </div>
+      </AnimatePresence>
+    </div>
+  );
+};

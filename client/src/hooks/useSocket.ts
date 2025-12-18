@@ -42,7 +42,11 @@ export function useSocket(): UseSocketReturn {
   const { setGameState, setCurrentPlayer: setStorePlayer, setRoomId, setConnected: setStoreConnected } = useGameStore();
 
   useEffect(() => {
-    const newSocket = io('http://localhost:3000', {
+    // Usa o hostname atual (será o IP da rede em dispositivos móveis)
+    const hostname = window.location.hostname;
+    const socketUrl = `http://${hostname}:3000`;
+    
+    const newSocket = io(socketUrl, {
       transports: ['websocket'],
     });
 

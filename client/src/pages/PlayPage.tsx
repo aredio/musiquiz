@@ -152,6 +152,22 @@ export default function PlayPage() {
 
   const visualState = getVisualState();
   const isButtonEnabled = gameState?.state === 'ROUND_PLAYING' && !isBuzzing && connected;
+  const isBlocked = visualState.type === 'blocked';
+
+  // Determinar cor de fundo baseado no estado
+  const getBackgroundClass = () => {
+    switch (visualState.type) {
+      case 'myTurn':
+        return 'bg-gradient-to-br from-blue-900 via-blue-800 to-indigo-900';
+      case 'blocked':
+        return 'bg-gradient-to-br from-red-900 via-red-800 to-rose-900';
+      case 'result':
+        return 'bg-gradient-to-br from-purple-900 via-indigo-900 to-purple-900';
+      case 'playing':
+      default:
+        return 'bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900';
+    }
+  };
 
   if (!hasJoined) {
     return (
@@ -204,53 +220,39 @@ export default function PlayPage() {
             </div>
 
             <AnimatePresence>
-            {buzzError && (
-              <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                className="mt-4 p-3 bg-red-500/20 border border-red-500/50 text-red-300 text-center rounded-lg"
-              >
-                {buzzError}
-              </motion.div>
-            )}
-            
-            {scoreChange !== null && (
-              <motion.div
-                key={`score-change-${Date.now()}`}
-                initial={{ opacity: 0, y: 20, scale: 0.8 }}
-                animate={{ 
-                  opacity: 1, 
-                  y: 0, 
-                  scale: 1,
-                  color: scoreChange > 0 ? '#4ade80' : '#f87171'
-                }}
-                exit={{ opacity: 0, y: -20, scale: 1.2 }}
-                className="text-2xl font-bold mt-4"
-              >
-                {scoreChange > 0 ? '+' : ''}{scoreChange} pontos
-              </motion.div>
-            )}
-          </AnimatePresence>
+              {buzzError && (
+                <motion.div 
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  className="mt-4 p-3 bg-red-500/20 border border-red-500/50 text-red-300 text-center rounded-lg"
+                >
+                  {buzzError}
+                </motion.div>
+              )}
+              
+              {scoreChange !== null && (
+                <motion.div
+                  key={`score-change-${Date.now()}`}
+                  initial={{ opacity: 0, y: 20, scale: 0.8 }}
+                  animate={{ 
+                    opacity: 1, 
+                    y: 0, 
+                    scale: 1,
+                    color: scoreChange > 0 ? '#4ade80' : '#f87171'
+                  }}
+                  exit={{ opacity: 0, y: -20, scale: 1.2 }}
+                  className="text-2xl font-bold mt-4"
+                >
+                  {scoreChange > 0 ? '+' : ''}{scoreChange} pontos
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
       </motion.div>
     );
   }
-
-  // Determinar cor de fundo baseado no estado
-  const getBackgroundClass = () => {
-    switch (visualState.type) {
-      case 'myTurn':
-        return 'bg-gradient-to-br from-blue-900 via-blue-800 to-indigo-900';
-      case 'blocked':
-        return 'bg-gradient-to-br from-red-900 via-red-800 to-rose-900';
-      case 'result':
-        return 'bg-gradient-to-br from-purple-900 via-indigo-900 to-purple-900';
-      case 'playing':
-      default:
-        return 'bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900';
-    }
-  };
 
   return (
     <div className={`min-h-screen ${getBackgroundClass()} flex items-center justify-center p-4 transition-all duration-500`}>
@@ -365,25 +367,19 @@ export default function PlayPage() {
             <>
               <motion.button
                 onClick={handleBuzz}
-                disabled={isBuzzing || !connected || !storePlayer || isBlocked}
+                disabled={isBuzzing || !connected || !storePlayer}
                 className={`w-full py-6 md:py-8 rounded-2xl font-bold text-2xl md:text-3xl focus:outline-none focus:ring-4 focus:ring-purple-500/50 ${
-                  isBuzzing || !connected || !storePlayer || isBlocked
+                  isBuzzing || !connected || !storePlayer
                     ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
                     : 'bg-gradient-to-br from-purple-600 to-pink-600 text-white shadow-lg shadow-purple-500/30 hover:shadow-xl hover:shadow-purple-500/50'
                 }`}
-                whileTap={!isBuzzing && connected && storePlayer && !isBlocked ? { 
+                whileTap={!isBuzzing && connected && storePlayer ? { 
                   scale: 0.95,
                   transition: { duration: 0.1 }
                 } : {}}
-                animate={isBlocked ? {
-                  x: [0, -5, 5, -5, 5, 0],
-                  transition: { duration: 0.5 }
-                } : {}}
               >
-                {isBlocked ? 'Bloqueado' : isBuzzing ? 'Aguardando...' : 'Apertar'}
+                {isBuzzing ? 'Aguardando...' : 'Apertar'}
               </motion.button>
-                </div>
-              </button>
 
               {/* Neon glow effect when enabled */}
               {isButtonEnabled && (
