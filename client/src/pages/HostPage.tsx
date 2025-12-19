@@ -1,4 +1,28 @@
 import { useState, useEffect, useRef } from 'react';
+// Define the game state types
+// Define the Song type
+interface Song {
+  id: string;
+  name: string;
+  artist: string;
+  previewUrl: string;
+}
+
+interface GameStateData {
+  state: 'LOBBY' | 'ROUND_PLAYING' | 'ROUND_LOCKED' | 'ROUND_RESULT' | 'GAME_OVER';
+  players: Array<{
+    id: string;
+    name: string;
+    score: number;
+    isConnected: boolean;
+  }>;
+  currentRound?: number;
+  totalRounds?: number;
+  currentSong?: Song;
+  hintRevealed?: boolean;
+  isAutoPlay?: boolean;
+  currentPlayerId?: string | null;
+}
 import { useSocket } from '../hooks/useSocket';
 import { useGameStore } from '../store/gameStore';
 import { QRCodeSVG } from 'qrcode.react';
@@ -121,6 +145,22 @@ export default function HostPage() {
     });
   };
 
+  // Control bar actions
+  const handlePlayMusic = () => {
+    if (!socket || !roomId) return;
+    socket.emit('play_music', { roomId });
+  };
+
+  const handleRevealHint = () => {
+    if (!socket || !roomId) return;
+    socket.emit('reveal_hint', { roomId });
+  };
+
+  const handleAnswerResult = (isCorrect: boolean) => {
+    if (!socket || !roomId) return;
+    socket.emit('answer_result', { roomId, isCorrect });
+  };
+
   const fireConfetti = () => {
     const count = 200;
     const defaults = {
@@ -241,11 +281,85 @@ export default function HostPage() {
     );
   }
 
-  const currentState = gameState?.state || 'LOBBY';
+  // Control bar component
+  const ControlBar = ({ gameState }: { gameState: GameStateData }) => {
+    if (!gameState) return null;
 
+    return (
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-black/70 backdrop-blur-lg border-t border-purple-500/30 z-50">
+        <div className="max-w-4xl mx-auto flex justify-center gap-4">
+          {gameState.state === 'LOBBY' && (
+            <button
+              onClick={handleStartGame}
+              disabled={isLoading}
+              className="px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold rounded-lg shadow-lg hover:opacity-90 transition-all disabled:opacity-50 flex-1 max-w-xs"
+            >
+              {isLoading ? 'Iniciando...' : '🎮 Iniciar Jogo'}
+            </button>
+          )}
+
+          {gameState.state === 'ROUND_PLAYING' && (
+            <>
+              {gameState.state === 'ROUND_PLAYING' && !gameState.isAutoPlay && (
+                <button
+                  onClick={handlePlayMusic}
+                  disabled={isLoading}
+                  className="px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-bold rounded-lg shadow-lg hover:opacity-90 transition-all disabled:opacity-50 flex-1 max-w-xs"
+                >
+                  🎵 Tocar Música
+                </button>
+              )}
+              <button
+                onClick={handleRevealHint}
+                disabled={isLoading || gameState.hintRevealed === true}
+                className="px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-600 text-white font-bold rounded-lg shadow-lg hover:opacity-90 transition-all disabled:opacity-50 flex-1 max-w-xs"
+              >
+                💡 {gameState.hintRevealed === true ? 'Dica Revelada' : 'Revelar Dica'}
+              </button>
+            </>
+          )}
+
+          {gameState.state === 'ROUND_LOCKED' && (
+            <div className="flex gap-4 w-full">
+              <button
+                onClick={() => handleAnswerResult(true)}
+                className="px-6 py-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold rounded-lg shadow-lg hover:opacity-90 transition-all flex-1 flex items-center justify-center gap-2"
+              >
+                <span className="text-2xl">✅</span>
+                <span>ACERTOU</span>
+              </button>
+              <button
+                onClick={() => handleAnswerResult(false)}
+                className="px-6 py-4 bg-gradient-to-r from-red-500 to-rose-600 text-white font-bold rounded-lg shadow-lg hover:opacity-90 transition-all flex-1 flex items-center justify-center gap-2"
+              >
+                <span className="text-2xl">❌</span>
+                <span>ERROU</span>
+              </button>
+            </div>
+          )}
+
+          {gameState.state === 'ROUND_RESULT' && (
+            <button
+              onClick={handleNextRound}
+              disabled={isLoading}
+              className="px-6 py-3 bg-gradient-to-r from-purple-500 to-indigo-600 text-white font-bold rounded-lg shadow-lg hover:opacity-90 transition-all disabled:opacity-50 flex-1 max-w-xs"
+            >
+              {isLoading ? 'Carregando...' : '⏭️ Próxima Fase'}
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  if (!gameState) {
+    return <div>Loading...</div>;
+  }
+
+  const currentState = gameState.state;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 p-4 md:p-8 pb-24">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 text-white p-4 md:pb-24">
       <AnimatePresence mode="wait">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
